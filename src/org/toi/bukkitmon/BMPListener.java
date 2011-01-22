@@ -1,6 +1,7 @@
 package org.toi.bukkitmon;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Random;
 
@@ -23,6 +24,8 @@ public class BMPListener extends PlayerListener {
 	private tPermissions perms;
 	private tProperties props;
 	private boolean announce = true;
+	private ArrayList<String> randommobblacklist = new ArrayList<String>();
+	private ArrayList<String> mobblacklist = new ArrayList<String>();
 	private String announceString = ChatColor.RED + "SPAWNING --> Watch out! " + ChatColor.YELLOW + "<player>" +
 	" spawned " + "<nr>" + " " + "<mobname>" + "s";
 	
@@ -39,11 +42,15 @@ public class BMPListener extends PlayerListener {
             props.load();
             BukkitMon.log.info("[BukkitMon] Config Loaded!");
         } catch (IOException e) {
-        	BukkitMon.log.warning("[BukkitMon] Failed to load configuration: "
-                    + e.getMessage());
+        	BukkitMon.log.warning("[BukkitMon] Failed to load configuration");
         }
         this.announce = props.getBoolean("announce-spawns", this.announce);
         this.announceString = props.getString("announce-tring", this.announceString);
+        ArrayList<String> temp = new ArrayList<String>();
+        temp.add("ghast");
+        temp.add("cow");
+        this.randommobblacklist = props.getStringList("random-blacklist", temp);
+        this.mobblacklist = props.getStringList("blacklist", temp);
         props.save();
 	}
 	
@@ -62,7 +69,16 @@ public class BMPListener extends PlayerListener {
 			else
 				event.setNumHatches(bm.getNrOfMobs());
 			if (bm.isRndType())
-				event.setHatchType(mts[rndint]);
+			{
+				int c = 0;
+				MobType mt = mts[rndint];
+				while (this.randommobblacklist.contains(mt.getName().toLowerCase()) && c < mts.length)
+				{
+					mt = mts[rnd.nextInt(mts.length - 1)];
+					c++;
+				}
+				event.setHatchType(mt);
+			}
 			else
 				event.setHatchType(bm.getMobtype());
 			event.setHatching(true);
@@ -122,8 +138,13 @@ public class BMPListener extends PlayerListener {
 						MobType mt = MobType.valueOf(split[2].toUpperCase());
 						if (mt != null)
 						{
-							bm.setMobtype(mt);
-							player.sendMessage(this.bmStr + "You set the mob type to " + split[2]);
+							if (!this.mobblacklist.contains(split[2].toLowerCase()))
+							{
+								bm.setMobtype(mt);
+								player.sendMessage(this.bmStr + "You set the mob type to " + split[2]);
+							}
+							else
+								player.sendMessage(this.bmStr + split[2] + " is not allowed!");
 						}
 						else
 							player.sendMessage(this.bmStr + "Invalid mobtype!");
@@ -138,7 +159,7 @@ public class BMPListener extends PlayerListener {
 				}
 				else if (split[1].equalsIgnoreCase("randomtype") && this.perms.canPlayerUseCommand(player.getName(), "randomtype"))
 				{
-					bm.setRndType(!bm.isRndAmount());
+					bm.setRndType(!bm.isRndType());
 					player.sendMessage(this.bmStr + "You set random type to " + bm.isRndType());
 				}
 				else if (split[1].equalsIgnoreCase("maxamount") && this.perms.canPlayerUseCommand(player.getName(), "maxamount"))
@@ -166,7 +187,7 @@ public class BMPListener extends PlayerListener {
 						player.sendMessage(this.bmStr + "You deactivated BukkitMon");
 					
 				}
-				else if (split[1].equalsIgnoreCase("list") && this.perms.canPlayerUseCommand(player.getName(), "list"))
+				else if ((split[1].equalsIgnoreCase("list") || split[1].equalsIgnoreCase("list")) && this.perms.canPlayerUseCommand(player.getName(), "list"))
 				{
 					player.sendMessage(ChatColor.RED + "BukkitMon commands:");
 					player.sendMessage(ChatColor.RED + "/bm mobs [#]" + ChatColor.YELLOW + " - Define how many mobs to spawn");

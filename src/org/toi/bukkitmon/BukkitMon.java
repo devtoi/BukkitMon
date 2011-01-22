@@ -16,7 +16,7 @@ public class BukkitMon extends JavaPlugin{
 
 	public static final Logger log = Logger.getLogger("Minecraft");
 	private String name = "BukkitMon";
-	private String version = "v0.2.1 (Ivysaur)";
+	private String version = "v0.3.0 (Venusaur)";
 	private tPermissions perms = new tPermissions("BukkitMon" + File.separator + "bukkitmon.perms");
 	private tProperties props = new tProperties("BukkitMon" + File.separator + "bukkitmon.properties");
 	private final BMPListener playerListener = new BMPListener(this, perms, props);
